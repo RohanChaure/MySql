@@ -1,0 +1,87 @@
+Q.1
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_order_status`(in order_year INT(4),in order_month varchar(3))
+BEGIN
+select orderdate,status from orders where year(orderdate)=order_year and
+ month(orderdate)=month(str_to_date(order_month,'%b'));
+END
+
+
+
+Q.2 (a)
+
+CREATE TABLE cancellations (id int AUTO_INCREMENT, Ordernumber int NOT NULL, COMMENTS text, customernumber int NOT NULL, PRIMARY KEY (ID), FOREIGN KEY (customernumber) REFERENCES customers (customernumber),FOREIGN KEY (ordernumber) REFERENCES orders (ordernumber));
+
+
+Q.2 (b)
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_cancellations_record`()
+BEGIN
+insert into cancellations (ordernumber,comments,customernumber) 
+select ordernumber,comments,customernumber from orders where status="Cancelled";
+END
+
+
+Q.3 (a)
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_payment_status`(in customerno int)
+BEGIN
+select (case when amount<25000 then 'Silver' when amount<=50000 then 'Gold' when amount>50000 then 'Platinum' end) as purchase_status from payments where customernumber=customerno;
+END
+
+Q.3  (b)
+
+use anadb;
+select p.customernumber,customername,(case when amount<25000 then 'Silver' when amount<=50000 then 'Gold' when amount>50000 then 'Platinum' end) as purchase_status from payments as p inner join customers as c on c.customernumber=p.customernumber;
+
+
+Q.4 
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `credit_proc`(cus_num integer)
+BEGIN
+declare p_stat varchar(20);
+    declare climit integer;
+    declare new_climit integer;
+    declare cus_num integer;
+
+    declare continue handler for sqlstate '45000'
+    
+Begin
+update customers set creditlimit = new_climit where customernumber = cus_num;
+ end;  
+ select new_function(cus_num), creditlimit into p_stat, climit from customers where customernumber = cus_num;
+
+if climit < 100000 and p_stat = "platinum"  then
+    set new_climit = 100000;
+    signal sqlstate '45000';
+elseif climit > 60000 and p_stat = "silver" then
+    set new_climit = 60000;
+    signal sqlstate '45000';
+end if;
+    
+END
+
+
+
+Q.5 
+
+Update the trigger for update cascade functionally
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `movies_AFTER_UPDATE` AFTER UPDATE ON `movies` FOR EACH ROW BEGIN
+update rentals
+
+set movieid = new.id
+
+where movieid = old.id;
+END
+
+
+Delete the trigger for update delete functionally
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `movies_AFTER_DELETE` AFTER DELETE ON `movies` FOR EACH ROW BEGIN
+delete from rentals
+
+-- set movieid = new.id
+
+where movieid = old.id;
+END
